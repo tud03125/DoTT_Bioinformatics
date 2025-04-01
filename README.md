@@ -21,6 +21,7 @@ This repository contains Python pipeline for performing DoTT (disruption of tran
    pip install -r requirements.txt
    ```
    Or
+
    **Pre-requisites (using conda):**
    ```
    conda env create -f environment.yml
