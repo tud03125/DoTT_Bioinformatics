@@ -28,6 +28,7 @@ This repository contains Python pipeline for performing DoTT (disruption of tran
    ```
 
 3. **Usage**
+
 To run the DoTT Bioinformatics Pipeline, use the following command-line template:
 
  ```
