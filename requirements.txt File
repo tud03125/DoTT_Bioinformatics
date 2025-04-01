@@ -1,0 +1,13 @@
+python=3.12
+pandas
+numpy
+pysam
+matplotlib
+seaborn
+rpy2
+mygene
+subread
+r-base
+r-deseq2
+r-enhancedvolcano
+r-ggplot2
