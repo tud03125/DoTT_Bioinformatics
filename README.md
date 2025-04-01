@@ -15,3 +15,8 @@ This repository contains Python pipeline for performing DoTT (disruption of tran
    ```bash
    gh repo clone tud03125/DoTT_Bioinformatics
    cd DoTT_Bioinformatics
+   
+2. **Pre-requisites**
+   pip install -r requirements.txt
+               or
+   conda env create -f environment.yml
