@@ -26,3 +26,16 @@ This repository contains Python pipeline for performing DoTT (disruption of tran
    ```
    conda env create -f environment.yml
    ```
+
+3. **Usage**
+To run the DoTT Bioinformatics Pipeline, use the following command-line template:
+
+ ```
+python DOTT_Bioinformatics_full_pipeline_GitHub.py \
+  --gtf-file [path/to/gtf_file] \
+  --bam-files [path/to/bam_file1] [path/to/bam_file2] ... [path/to/last_bam_file] \
+  --species [mm39 | hg38 | hg19] \
+  --extension [extension_length_in_bases] \
+  --output-dir [path/to/output_directory] \
+  --conditions "[condition1],[condition2],..., [conditionN]"
+ ```
