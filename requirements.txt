@@ -11,3 +11,4 @@ r-base
 r-deseq2
 r-enhancedvolcano
 r-ggplot2
+r-svglite
