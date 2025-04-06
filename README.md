@@ -101,7 +101,7 @@ Required if --supervised_ml is used.
 The label for the experimental condition. This value is used by ML modules to separate experimental vs. control samples.
 Required if --supervised_ml is used.
 
-## Example 1: Simulated Mouse (mm39) Data with Bootstrapping, GSEA, and Supervised ML
+## Example 1: Simulated Mouse (mm39) Test with Bootstrapping, GSEA, and Supervised ML
 
 ```
 cd /path/to/DoTT_Bioinformatics
