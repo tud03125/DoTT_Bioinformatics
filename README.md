@@ -5,7 +5,7 @@ A bioinformatics pipeline for analyzing disruption of transcriptional terminatio
 This repository contains Python pipeline for performing DoTT (disruption of transcriptional termination) analysis. It integrates multiple processing steps such as generating SAF files from GTF annotations, running featureCounts, filtering counts, differential expression analysis with DESeq2 (via rpy2), and merging significant gene regions. The pipeline supports both mouse (mm39) and human (hg38/hg19) datasets with flexible input parameters.
 
 ## Features
-+**Modular Design:**
+--**Modular Design:**
 The pipeline is organized into distinct modules for annotation, read quantification (featureCounts), DESeq2 analysis, interval merging, coordinate extraction, and machine learning. This makes it easier to maintain, update, and customize.
 
 --**Flexible Annotation and SAF Generation:**
