@@ -102,7 +102,7 @@ Path to the simulation ground truth file (e.g., ```sim_tx_info.txt```).
 
 **--experimental_condition**
 The label for the experimental condition. This value is used by ML modules to separate experimental vs. control samples.
-**Required if ```--supervised_ml``` or ```--unsupervised_ml``` is used.**
+**Required if** ```--supervised_ml``` **or** ```--unsupervised_ml``` **is used.**
 
 ## Example 1: Simulated Mouse (mm39) Test with Bootstrapping, GSEA, and Supervised ML
 
