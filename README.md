@@ -61,11 +61,11 @@ Prerequisites for Python packages are provided in requirements.txt/environment.y
 
    This pipeline requires the following R packages:
 
-      -```DESeq2``` (install via Bioconductor)
+    - ```DESeq2``` (install via Bioconductor)
 
-      -```EnhancedVolcano``` (install via Bioconductor)
+   - ```EnhancedVolcano``` (install via Bioconductor)
 
-      -```argparse```, ```ggplot2```, ```ggrepel``` (install via CRAN)
+    - ```argparse```, ```ggplot2```, ```ggrepel``` (install via CRAN)
    
    To install these packages, you can run the following in R:
 
