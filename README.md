@@ -79,7 +79,7 @@ Prerequisites for Python packages are provided in requirements.txt/environment.y
    BiocManager::install(c("DESeq2", "EnhancedVolcano"))
    ```
 
-## Usage
+# Usage
 
 ## Required Arguments
 **--gtf-file**
