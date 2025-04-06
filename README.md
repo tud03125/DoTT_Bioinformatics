@@ -49,7 +49,7 @@ This repository contains Python pipeline for performing DoTT (disruption of tran
    BiocManager::install(c("DESeq2", "EnhancedVolcano"))
    ```
 
-4. **Usage**
+## Usage
 
 ## Required Arguments
 **--gtf-file**
