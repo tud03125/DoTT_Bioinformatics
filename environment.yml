@@ -18,7 +18,4 @@ dependencies:
   - r-deseq2
   - r-enhancedvolcano
   - r-ggplot2
-<<<<<<< HEAD
-=======
   - r-svglite
->>>>>>> 7367c608480114b5c71f169bdec2ba306d569504
