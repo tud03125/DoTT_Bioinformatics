@@ -48,14 +48,55 @@ This repository contains Python pipeline for performing DoTT (disruption of tran
 
 4. **Usage**
 
-To run the DoTT Bioinformatics Pipeline, use the following command-line template:
+Required Arguments
+--gtf-file
+Path to the GTF annotation file (e.g., for mm39: /home/tud03125/pipeline/mm39_RefSeq.gtf; for hg38: /home/tud03125/pipeline/hg38.knownGene.gtf).
 
- ```
-python DOTT_Bioinformatics_full_pipeline_GitHub.py \
-  --gtf-file [path/to/gtf_file] \
-  --bam-files [path/to/bam_file1] [path/to/bam_file2] ... [path/to/last_bam_file] \
-  --species [mm39 | hg38 | hg19] \
-  --extension [extension_length_in_bases] \
-  --output-dir [path/to/output_directory] \
-  --conditions "[condition1],[condition2],..., [conditionN]"
- ```
+--bam-files
+A list of BAM file paths (space-separated). The order of the files must correspond to the sample conditions provided with --conditions.
+
+--species
+Species option. For mouse use mm39; for human use hg38 or hg19.
+
+--extension
+Fixed extension length in bases (e.g., 10000).
+
+--output-dir
+Directory where all output files will be written.
+
+--conditions
+Comma-separated list of condition labels for each BAM file.
+
+For simulated (mouse) data, for example: Fasted,Fasted,Fasted,Fasted,Fasted,HCD,HCD,HCD,HCD,HCD
+
+For human data, for example: mock,mock,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1
+
+Optional Arguments
+--dynamic
+Enable dynamic region extension (if not provided, a fixed extension is used).
+
+--kgx-file
+Path to the kgXref mapping file (used for human GTFs).
+
+--run_gsea
+Enable generation of a GSEA pre-ranked list from the DESeq2 results.
+
+--bootstrap, --n_boot, --consensus_threshold
+Enable bootstrapping in the DESeq2 analysis.
+
+--bootstrap is a flag (include it to enable bootstrapping).
+
+--n_boot sets the number of bootstrap iterations (default is 100).
+
+--consensus_threshold is the fraction (default is 0.5) required for a gene to be considered consensus.
+
+--supervised_ml
+Enable supervised ML analysis (which compares DESeq2 results to simulation ground truth and trains an ML classifier).
+
+--sim_tx_info
+Path to the simulation ground truth file (e.g., sim_tx_info.txt).
+Required if --supervised_ml is used.
+
+--experimental_condition
+The label for the experimental condition. This value is used by ML modules to separate experimental vs. control samples.
+Required if --supervised_ml is used.
