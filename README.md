@@ -100,3 +100,58 @@ Required if --supervised_ml is used.
 **--experimental_condition**
 The label for the experimental condition. This value is used by ML modules to separate experimental vs. control samples.
 Required if --supervised_ml is used.
+
+## Example 1: Simulated Mouse (mm39) Data with Bootstrapping, GSEA, and Supervised ML
+
+```
+cd /path/to/DoTT_Bioinformatics
+python3 main.py \
+  --gtf-file /path/to/pipeline/mm39_RefSeq.gtf \
+  --bam-files /path/to/simulated_reads/STAR_sample_01_Aligned.sortedByCoord.out.bam \
+              /path/to/simulated_reads/STAR_sample_02_Aligned.sortedByCoord.out.bam \
+              /path/to/simulated_reads/STAR_sample_03_Aligned.sortedByCoord.out.bam \
+              /path/to/simulated_reads/STAR_sample_04_Aligned.sortedByCoord.out.bam \
+              /path/to/simulated_reads/STAR_sample_05_Aligned.sortedByCoord.out.bam \
+              /path/to/simulated_reads/STAR_sample_06_Aligned.sortedByCoord.out.bam \
+              /path/to/simulated_reads/STAR_sample_07_Aligned.sortedByCoord.out.bam \
+              /path/to/simulated_reads/STAR_sample_08_Aligned.sortedByCoord.out.bam \
+              /path/to/simulated_reads/STAR_sample_09_Aligned.sortedByCoord.out.bam \
+              /path/to/simulated_reads/STAR_sample_10_Aligned.sortedByCoord.out.bam \
+  --species mm39 \
+  --extension 10000 \
+  --output-dir DoTT_simulation_test \
+  --conditions Fasted,Fasted,Fasted,Fasted,Fasted,HCD,HCD,HCD,HCD,HCD \
+  --bootstrap \
+  --n_boot 100 \
+  --consensus_threshold 0.5 \
+  --run_gsea \
+  --supervised_ml \
+  --experimental_condition HCD \
+  --sim_tx_info /path/to/simulated_reads/sim_tx_info.txt
+```
+
+## Example 2: Human Data (hg38) Test with Bootstrapping and GSEA
+
+```
+cd /path/to/DoTT_Bioinformatics
+python3 main.py \
+  --gtf-file /path/to/pipeline/hg38.knownGene.gtf \
+  --bam-files /path/to/GSE59717/Total_RNA_mock/SRR1523653_Aligned.sortedByCoord.out.bam \
+              /path/to/GSE59717/Total_RNA_mock/SRR1523667_Aligned.sortedByCoord.out.bam \
+              /path/to/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523654_Aligned.sortedByCoord.out.bam \
+              /path/to/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523655_Aligned.sortedByCoord.out.bam \
+              /path/to/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523656_Aligned.sortedByCoord.out.bam \
+              /path/to/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523657_Aligned.sortedByCoord.out.bam \
+              /path/to/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523668_Aligned.sortedByCoord.out.bam \
+              /path/to/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523669_Aligned.sortedByCoord.out.bam \
+              /path/to/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523670_Aligned.sortedByCoord.out.bam \
+              /path/to/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523671_Aligned.sortedByCoord.out.bam \
+  --species hg38 \
+  --extension 10000 \
+  --output-dir DoTT_HSV-1_mock_test \
+  --conditions mock,mock,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1 \
+  --bootstrap \
+  --n_boot 100 \
+  --consensus_threshold 0.5 \
+  --run_gsea
+```
