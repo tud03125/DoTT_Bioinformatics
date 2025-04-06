@@ -11,9 +11,5 @@ argparse
 r-base
 r-deseq2
 r-enhancedvolcano
-<<<<<<< HEAD
-r-ggplot2
-=======
 r-ggplot2
 r-svglite
->>>>>>> 7367c608480114b5c71f169bdec2ba306d569504
