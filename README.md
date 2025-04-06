@@ -84,11 +84,11 @@ Enable generation of a GSEA pre-ranked list from the DESeq2 results.
 **--bootstrap, --n_boot, --consensus_threshold**
 Enable bootstrapping in the DESeq2 analysis.
 
-```--bootstrap``` is a flag (include it to enable bootstrapping).
-
-```--n_boot``` sets the number of bootstrap iterations (default is 100).
-
-```--consensus_threshold``` is the fraction (default is 0.5) required for a gene to be considered consensus.
+   ```--bootstrap``` is a flag (include it to enable bootstrapping).
+   
+   ```--n_boot``` sets the number of bootstrap iterations (default is 100).
+   
+   ```--consensus_threshold``` is the fraction (default is 0.5) required for a gene to be considered consensus.
 
 **--supervised_ml**
 Enable supervised ML analysis (which compares DESeq2 results to simulation ground truth and trains an ML classifier).
