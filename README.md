@@ -98,11 +98,11 @@ Enable supervised ML analysis (which compares DESeq2 results to simulation groun
 
 **--sim_tx_info**
 Path to the simulation ground truth file (e.g., ```sim_tx_info.txt```).
-**Required if --supervised_ml is used.**
+**Required if ```--supervised_ml``` is used.**
 
 **--experimental_condition**
 The label for the experimental condition. This value is used by ML modules to separate experimental vs. control samples.
-**Required if --supervised_ml or --unsupervised_ml is used.**
+**Required if ```--supervised_ml``` or ```--unsupervised_ml``` is used.**
 
 ## Example 1: Simulated Mouse (mm39) Test with Bootstrapping, GSEA, and Supervised ML
 
