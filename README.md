@@ -50,16 +50,16 @@ This repository contains Python pipeline for performing DoTT (disruption of tran
 
 ## Required Arguments
 **--gtf-file**
-Path to the GTF annotation file (e.g., for mm39: /path/to/mm39_RefSeq.gtf; for hg38: /path/to/hg38.knownGene.gtf).
+Path to the GTF annotation file (e.g., for mm39: ```/path/to/mm39_RefSeq.gtf```; for hg38: ```/path/to/hg38.knownGene.gtf```).
 
 **--bam-files**
-A list of BAM file paths (space-separated). The order of the files must correspond to the sample conditions provided with --conditions.
+A list of BAM file paths (space-separated). The order of the files must correspond to the sample conditions provided with ```--conditions```.
 
 **--species**
-Species option. For mouse use mm39; for human use hg38 or hg19.
+Species option. For mouse use ```mm39```; for human use ```hg38``` or ```hg19```.
 
 **--extension**
-Fixed extension length in bases (e.g., 10000).
+Fixed extension length in bases (e.g., ```10000```).
 
 **--output-dir**
 Directory where all output files will be written.
@@ -67,9 +67,9 @@ Directory where all output files will be written.
 **--conditions**
 Comma-separated list of condition labels for each BAM file.
 
-For simulated (mouse) data, for example: Fasted,Fasted,Fasted,Fasted,Fasted,HCD,HCD,HCD,HCD,HCD
+   For simulated (mouse) data, for example: ```Fasted,Fasted,Fasted,Fasted,Fasted,HCD,HCD,HCD,HCD,HCD```
 
-For human data, for example: mock,mock,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1
+   For human data, for example: ```mock,mock,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1```
 
 ## Optional Arguments
 **--dynamic**
@@ -84,17 +84,17 @@ Enable generation of a GSEA pre-ranked list from the DESeq2 results.
 **--bootstrap, --n_boot, --consensus_threshold**
 Enable bootstrapping in the DESeq2 analysis.
 
---bootstrap is a flag (include it to enable bootstrapping).
+```--bootstrap``` is a flag (include it to enable bootstrapping).
 
---n_boot sets the number of bootstrap iterations (default is 100).
+```--n_boot``` sets the number of bootstrap iterations (default is 100).
 
---consensus_threshold is the fraction (default is 0.5) required for a gene to be considered consensus.
+```--consensus_threshold``` is the fraction (default is 0.5) required for a gene to be considered consensus.
 
 **--supervised_ml**
 Enable supervised ML analysis (which compares DESeq2 results to simulation ground truth and trains an ML classifier).
 
 **--sim_tx_info**
-Path to the simulation ground truth file (e.g., sim_tx_info.txt).
+Path to the simulation ground truth file (e.g., ```sim_tx_info.txt```).
 Required if --supervised_ml is used.
 
 **--experimental_condition**
