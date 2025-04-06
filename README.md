@@ -137,9 +137,9 @@ cd /path/to/DoTT_Bioinformatics
 python3 main.py \
   --gtf-file /path/to/hg38.knownGene.gtf \
   --bam-files /path/to/human/dataset/Total_RNA_mock/SRR1523653_Aligned.sortedByCoord.out.bam \
-              /path/to/human/dataset/human/dataset/Total_RNA_mock/SRR1523667_Aligned.sortedByCoord.out.bam \
-              /path/to/human/dataset/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523654_Aligned.sortedByCoord.out.bam \
-              /path/to/human/dataset/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523655_Aligned.sortedByCoord.out.bam \
+              /path/to/human/dataset/Total_RNA_mock/SRR1523667_Aligned.sortedByCoord.out.bam \
+              /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523654_Aligned.sortedByCoord.out.bam \
+              /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523655_Aligned.sortedByCoord.out.bam \
               /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523656_Aligned.sortedByCoord.out.bam \
               /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523657_Aligned.sortedByCoord.out.bam \
               /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523668_Aligned.sortedByCoord.out.bam \
