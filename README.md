@@ -30,6 +30,7 @@ This repository contains Python pipeline for performing DoTT (disruption of tran
    **R Package Installation**
 
    This pipeline requires the following R packages:
+
       -DESeq2 (install via Bioconductor)
       -EnhancedVolcano (install via Bioconductor)
       -argparse, ggplot2, ggrepel (install via CRAN)
