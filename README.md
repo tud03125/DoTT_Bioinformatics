@@ -100,9 +100,9 @@ Directory where all output files will be written.
 **--conditions**
 Comma-separated list of condition labels for each BAM file.
 
-   For simulated (mouse) data, for example: ```Fasted,Fasted,Fasted,Fasted,Fasted,HCD,HCD,HCD,HCD,HCD```
+- For simulated (mouse) data, for example: ```Fasted,Fasted,Fasted,Fasted,Fasted,HCD,HCD,HCD,HCD,HCD```
 
-   For human data, for example: ```mock,mock,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1```
+- For human data, for example: ```mock,mock,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1```
 
 ## Optional Arguments
 **--dynamic**
