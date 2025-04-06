@@ -90,6 +90,9 @@ Enable bootstrapping in the DESeq2 analysis.
    
    ```--consensus_threshold``` is the fraction (default is 0.5) required for a gene to be considered consensus.
 
+**--unsupervised_ml**
+Enable the unsupervised ML analysis module, which uses the DESeq2 results along with the provided conditions to assess replicate consistency and perform enrichment comparisons.
+
 **--supervised_ml**
 Enable supervised ML analysis (which compares DESeq2 results to simulation ground truth and trains an ML classifier).
 
