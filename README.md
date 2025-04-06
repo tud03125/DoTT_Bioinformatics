@@ -51,7 +51,7 @@ This repository contains Python pipeline for performing DoTT (disruption of tran
 
 ## Usage
 
-## Required Arguments
+***Required Arguments***
 **--gtf-file**
 Path to the GTF annotation file (e.g., for mm39: ```/path/to/mm39_RefSeq.gtf```; for hg38: ```/path/to/hg38.knownGene.gtf```).
 
