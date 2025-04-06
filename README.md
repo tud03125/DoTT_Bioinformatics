@@ -5,7 +5,7 @@ A bioinformatics pipeline for analyzing disruption of transcriptional terminatio
 This repository contains Python pipeline for performing DoTT (disruption of transcriptional termination) analysis. It integrates multiple processing steps such as generating SAF files from GTF annotations, running featureCounts, filtering counts, differential expression analysis with DESeq2 (via rpy2), and merging significant gene regions. The pipeline supports both mouse (mm39) and human (hg38/hg19) datasets with flexible input parameters.
 
 ## Features
---**Modular Design:**
+-**Modular Design:**
 The pipeline is organized into distinct modules for annotation, read quantification (featureCounts), DESeq2 analysis, interval merging, coordinate extraction, and machine learning. This makes it easier to maintain, update, and customize.
 
 -**Flexible Annotation and SAF Generation:**
@@ -17,22 +17,22 @@ Automatically detects paired-end/single-end data and runs featureCounts to gener
 -**DESeq2 Differential Expression Analysis (via R):**
 Runs a DESeq2 analysis using rpy2, producing differential expression results.
 
-   -**Bootstrapping Option:**
-   Optionally, the pipeline can perform bootstrapping (with customizable iterations and consensus threshold) to generate consensus DE calls.
+  -**Bootstrapping Option:**
+  Optionally, the pipeline can perform bootstrapping (with customizable iterations and consensus threshold) to generate consensus DE calls.
 
-   -**Multiple Output Files:**
-   Produces separate files for significant genes (directional, i.e., log2FC > 1) and absolute significant genes (using |log2FC| > 1, including individual mean values).
+  -**Multiple Output Files:**
+  Produces separate files for significant genes (directional, i.e., log2FC > 1) and absolute significant genes (using |log2FC| > 1, including individual mean values).
 
 -**GSEA Pre-ranked List Generation:**
 Optionally generates a GSEA pre-ranked list from the DESeq2 results and prints instructions for upload to GenePattern.
 
 -**Machine Learning Modules:**
 
-   -**Supervised ML Analysis:**
-   Compares DESeq2 results to simulation ground truth, trains a classifier (using RandomForest with SMOTE), evaluates performance (ROC, PR curves, confusion matrix), and outputs performance metrics.
+  -**Supervised ML Analysis:**
+  Compares DESeq2 results to simulation ground truth, trains a classifier (using RandomForest with SMOTE), evaluates performance (ROC, PR curves, confusion matrix), and outputs performance metrics.
 
-   -**Unsupervised ML Analysis:**
-   (If enabled) Uses the provided sample conditions to assess replicate consistency and perform enrichment analysis on the DESeq2 results.
+  -**Unsupervised ML Analysis:**
+  (If enabled) Uses the provided sample conditions to assess replicate consistency and perform enrichment analysis on the DESeq2 results.
 
 -**Customizable Input/Output:**
 Users provide input file paths via command-line arguments. The pipeline supports flexible conditions, species options, and bootstrapping parameters, making it adaptable to various datasets (e.g., simulated mouse data, human HSV-1 data).
