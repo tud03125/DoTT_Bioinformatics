@@ -191,3 +191,32 @@ python3 main.py \
   --consensus_threshold 0.5 \
   --run_gsea
 ```
+
+## Example 3: Human Data (hg38) Test with Bootstrapping, GSEA and Unsupervised ML
+
+```
+cd /path/to/DoTT_Bioinformatics
+python3 main.py \
+  --gtf-file /path/to/hg38.knownGene.gtf \
+  --bam-files /path/to/human/dataset/Total_RNA_mock/SRR1523653_Aligned.sortedByCoord.out.bam \
+              /path/to/human/dataset/Total_RNA_mock/SRR1523667_Aligned.sortedByCoord.out.bam \
+              /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523654_Aligned.sortedByCoord.out.bam \
+              /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523655_Aligned.sortedByCoord.out.bam \
+              /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523656_Aligned.sortedByCoord.out.bam \
+              /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523657_Aligned.sortedByCoord.out.bam \
+              /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523668_Aligned.sortedByCoord.out.bam \
+              /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523669_Aligned.sortedByCoord.out.bam \
+              /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523670_Aligned.sortedByCoord.out.bam \
+              /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523671_Aligned.sortedByCoord.out.bam \
+  --species hg38 \
+  --extension 10000 \
+  --output-dir DoTT_HSV-1_mock_test \
+  --conditions mock,mock,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1 \
+  --bootstrap \
+  --n_boot 100 \
+  --consensus_threshold 0.5 \
+  --run_gsea \
+  --unsupervised_ml \
+  --experimental_condition HSV-1
+```
+
