@@ -33,8 +33,8 @@ def main():
                         help="Run supervised ML analysis module")
     parser.add_argument("--experimental_condition",
                         help="Label for the experimental condition")
-    # New parameter for simulation ground truth (required if supervised ML is run)
-    parser.add_argument("--sim_tx_info", help="Path to the simulation ground truth file (e.g., sim_tx_info.txt)")
+    # Updated ground truth parameter (formerly sim_tx_info)
+    parser.add_argument("--ground_truth", help="Path to the ground truth file (CSV or TXT format)")
     # Optional bootstrapping arguments (if applicable)
     parser.add_argument("--bootstrap", action="store_true", help="Perform bootstrapping in DESeq2 analysis")
     parser.add_argument("--n_boot", type=int, default=100, help="Number of bootstrap iterations")
@@ -71,9 +71,8 @@ def main():
         "--output_dir", args.output_dir,
         "--conditions", args.conditions
     ]
-    # Optional Boostrapping option for DESeq2
-    if args.bootstrap:  # if the bootstrap flag is set, add bootstrap parameters
-        # Since --bootstrap is a store_true flag, simply add the additional arguments.
+    # Optional Bootstrapping option for DESeq2
+    if args.bootstrap:
         r_cmd.extend([
             "--bootstrap", "TRUE",
             "--n_boot", str(args.n_boot),
@@ -112,22 +111,22 @@ def main():
     
     # Optional Module: Supervised ML Analysis
     if args.supervised_ml:
-        if not args.sim_tx_info:
-            raise ValueError("For supervised ML, please provide --sim_tx_info (ground truth file path).")
+        if not args.ground_truth:
+            raise ValueError("For supervised ML, please provide --ground_truth (ground truth file path).")
         if not args.experimental_condition:
             raise ValueError("For supervised ML, please provide --experimental_condition.")
         from Supervised_ML import train_ml_classifier_cv, evaluate_ml_performance, compare_to_ground_truth
         # Compare DESeq2 results to ground truth:
         gt_merged, gt_cm, gt_roc_auc = compare_to_ground_truth(
-            args.sim_tx_info, de_results_file, args.gtf_file, args.output_dir)
+            args.ground_truth, de_results_file, args.gtf_file, args.output_dir)
         print("Ground truth comparison complete. ROC AUC from ground truth comparison before ML classifier:", gt_roc_auc)
 
         # Train ML classifier using cross-validation:
         cv_scores, final_model, pred_df, holdout_results = train_ml_classifier_cv(
-            args.sim_tx_info, de_results_file, args.gtf_file, args.output_dir, clf_cutoff=0.5, cv=5, test_size=0.2)
+            args.ground_truth, de_results_file, args.gtf_file, args.output_dir, clf_cutoff=0.5, cv=5, test_size=0.2)
         # Evaluate ML performance:
         merged_ml, cm_df, metrics_df = evaluate_ml_performance(
-            pred_df, holdout_results, args.sim_tx_info, args.gtf_file, args.output_dir)
+            pred_df, holdout_results, args.ground_truth, args.gtf_file, args.output_dir)
         print("ML classifier ROC AUC:", metrics_df["ROC_AUC"].values[0])
 
     print("Pipeline finished successfully.")

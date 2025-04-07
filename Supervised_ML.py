@@ -25,7 +25,7 @@ def load_tx2gene_mapping(gtf_file):
             fields = line.strip().split("\t")
             if len(fields) < 9 or fields[2] != "transcript":
                 continue
-            # In a GTF file, the 9th field (index 8) contains the attributes.
+            # In a GTF file, the 9th field contains the attributes.
             attr = fields[8]
             transcript_match = re.search(r'transcript_id "([^"]+)"', attr)
             gene_match = re.search(r'gene_name "([^"]+)"', attr)
@@ -35,21 +35,56 @@ def load_tx2gene_mapping(gtf_file):
                 mapping[transcript_id] = gene_name
     return mapping
 
-def compare_to_ground_truth(sim_tx_info_file, deseq_results_file, mapping_gtf_file, output_dir):
+def load_ground_truth(ground_truth_file, mapping_gtf_file):
     """
-    Compares DESeq2 results with simulation ground truth.
-    Merges the ground truth with DESeq2 results on gene names,
+    Loads ground truth data from a file that can be either a tab-delimited TXT file
+    (with transcript IDs) or a CSV (with gene names already provided). If the 'gene'
+    column is missing, the function will attempt to map 'transcriptid' to gene names
+    using the supplied GTF file.
+    
+    The function also standardizes the ground truth status by looking for a column
+    named 'DEstatus.2' (or 'ground_truth') and converting its values to 1 (TRUE) or 0 (FALSE).
+
+    Returns:
+        DataFrame with at least the following columns:
+            - gene : UCSC-based gene name
+            - ground_truth : 1 for TRUE (DoTT) and 0 for FALSE
+    """
+    ext = os.path.splitext(ground_truth_file)[1].lower()
+    if ext == ".csv":
+        gt_df = pd.read_csv(ground_truth_file)
+    else:
+        gt_df = pd.read_csv(ground_truth_file, sep="\t")
+    
+    # If a 'gene' column is not present, then map 'transcriptid' to gene names.
+    if "gene" not in gt_df.columns:
+        if "transcriptid" not in gt_df.columns:
+            raise ValueError("Ground truth file must contain either a 'gene' or 'transcriptid' column.")
+        tx2gene = load_tx2gene_mapping(mapping_gtf_file)
+        gt_df["gene"] = gt_df["transcriptid"].map(tx2gene)
+        gt_df = gt_df.dropna(subset=["gene"])
+    
+    # Standardize the ground truth column.
+    # The original column (from the simulation) is 'DEstatus.2', but if you've preprocessed your data,
+    # it might already be named 'ground_truth'.
+    if "DEstatus.2" in gt_df.columns:
+        gt_df["ground_truth"] = gt_df["DEstatus.2"].apply(lambda x: 1 if str(x).strip().upper() == "TRUE" else 0)
+    elif "ground_truth" in gt_df.columns:
+        gt_df["ground_truth"] = gt_df["ground_truth"].apply(lambda x: 1 if str(x).strip().upper() == "TRUE" else 0)
+    else:
+        raise ValueError("Ground truth file must contain 'DEstatus.2' or 'ground_truth' column.")
+    
+    return gt_df
+
+def compare_to_ground_truth(ground_truth_file, deseq_results_file, mapping_gtf_file, output_dir):
+    """
+    Compares DESeq2 results with ground truth.
+    Merges the ground truth data with DESeq2 results (merged on gene names),
     computes a confusion matrix, and saves performance metrics.
     """
-    sim_tx = pd.read_csv(sim_tx_info_file, sep="\t")
-    # Build transcript-to-gene mapping.
-    tx2gene = load_tx2gene_mapping(mapping_gtf_file)
-    sim_tx['gene'] = sim_tx['transcriptid'].map(tx2gene)
-    sim_tx = sim_tx.dropna(subset=['gene'])
-    sim_tx['ground_truth'] = sim_tx['DEstatus.2'].apply(lambda x: 1 if str(x).strip().upper() == "TRUE" else 0)
-    
+    gt_df = load_ground_truth(ground_truth_file, mapping_gtf_file)
     deseq = pd.read_csv(deseq_results_file, index_col=0)
-    merged = sim_tx.merge(deseq[['padj', 'log2FoldChange']], left_on='gene', right_index=True, how='inner')
+    merged = gt_df.merge(deseq[['padj', 'log2FoldChange']], left_on='gene', right_index=True, how='inner')
     merged['predicted'] = ((merged['padj'] < 0.05) & (abs(merged['log2FoldChange']) > 1)).astype(int)
     merged_file = os.path.join(output_dir, "merged_ground_truth_and_deseq_results.csv")
     merged.to_csv(merged_file, index=False)
@@ -79,20 +114,17 @@ def compare_to_ground_truth(sim_tx_info_file, deseq_results_file, mapping_gtf_fi
     
     return merged, cm_df, roc_auc_val
 
-def train_ml_classifier_cv(sim_tx_info_file, deseq_results_file, mapping_gtf_file, output_dir, clf_cutoff=0.5, cv=5, test_size=0.2):
+def train_ml_classifier_cv(ground_truth_file, deseq_results_file, mapping_gtf_file, output_dir, clf_cutoff=0.5, cv=5, test_size=0.2):
     """
-    Trains a supervised ML classifier using DESeq2 features and simulation ground truth.
-    Returns cross-validation scores, the final model, and predictions.
-    """
-    # Load simulation ground truth and mapping.
-    sim_tx = pd.read_csv(sim_tx_info_file, sep="\t")
-    tx2gene = load_tx2gene_mapping(mapping_gtf_file)
-    sim_tx['gene'] = sim_tx['transcriptid'].map(tx2gene)
-    sim_tx = sim_tx.dropna(subset=['gene'])
-    sim_tx['ground_truth'] = sim_tx['DEstatus.2'].apply(lambda x: 1 if str(x).strip().upper() == "TRUE" else 0)
+    Trains a supervised ML classifier using DESeq2 features and ground truth.
+    Merges ground truth (loaded via load_ground_truth) with DESeq2 result data
+    (including baseMean, log2FoldChange, pvalue, and padj), and then computes a score.
     
+    Returns cross-validation scores, the final model, and prediction DataFrames.
+    """
+    gt_df = load_ground_truth(ground_truth_file, mapping_gtf_file)
     deseq = pd.read_csv(deseq_results_file, index_col=0)
-    data = sim_tx.merge(deseq[['baseMean', 'log2FoldChange', 'pvalue', 'padj']], left_on='gene', right_index=True, how='inner')
+    data = gt_df.merge(deseq[['baseMean', 'log2FoldChange', 'pvalue', 'padj']], left_on='gene', right_index=True, how='inner')
     data.dropna(subset=['padj'], inplace=True)
     data['padj_adj'] = data['padj'].replace(0, 1e-300)
     data['score'] = -np.log10(data['padj_adj'])
@@ -146,18 +178,14 @@ def train_ml_classifier_cv(sim_tx_info_file, deseq_results_file, mapping_gtf_fil
     
     return cv_scores, pipeline, pred_df, holdout_results
 
-def evaluate_ml_performance(pred_df, holdout_results, sim_tx_info_file, mapping_gtf_file, output_dir):
+def evaluate_ml_performance(pred_df, holdout_results, ground_truth_file, mapping_gtf_file, output_dir):
     """
-    Evaluates ML classifier performance by merging predictions with ground truth,
-    computing confusion matrices, ROC and PR curves, and saving performance metrics.
+    Evaluates the ML classifier performance by merging ML predictions with ground truth,
+    and generating confusion matrices, ROC curves, and precision-recall curves.
+    Saves all performance metrics to CSV files.
     """
-    sim_tx = pd.read_csv(sim_tx_info_file, sep="\t")
-    tx2gene = load_tx2gene_mapping(mapping_gtf_file)
-    sim_tx['gene'] = sim_tx['transcriptid'].map(tx2gene)
-    sim_tx = sim_tx.dropna(subset=['gene'])
-    sim_tx['ground_truth'] = sim_tx['DEstatus.2'].apply(lambda x: 1 if str(x).strip().upper() == "TRUE" else 0)
-    
-    merged_ml = sim_tx[['gene', 'ground_truth']].merge(pred_df, on='gene', how='inner')
+    gt_df = load_ground_truth(ground_truth_file, mapping_gtf_file)
+    merged_ml = gt_df[['gene', 'ground_truth']].merge(pred_df, on='gene', how='inner')
     merged_ml_file = os.path.join(output_dir, "merged_ground_truth_and_ml_predictions.csv")
     merged_ml.to_csv(merged_ml_file, index=False)
     print("Merged ML predictions with ground truth saved to:", merged_ml_file)
