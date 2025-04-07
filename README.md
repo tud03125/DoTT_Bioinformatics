@@ -29,7 +29,7 @@ Optionally generates a GSEA pre-ranked list from the DESeq2 results and prints i
 - **Machine Learning Modules:**
 
   - **Supervised ML Analysis:**
-  Compares DESeq2 results to simulation ground truth, trains a classifier (using RandomForest with SMOTE), evaluates performance (ROC, PR curves, confusion matrix), and outputs performance metrics.
+  Compares DESeq2 results to the given ground truth, trains a classifier (using RandomForest with SMOTE), evaluates performance (ROC, PR curves, confusion matrix), and outputs performance metrics.
 
   - **Unsupervised ML Analysis:**
   (If enabled) Uses the provided sample conditions to assess replicate consistency and perform enrichment analysis on the DESeq2 results.
