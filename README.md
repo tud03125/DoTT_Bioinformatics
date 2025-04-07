@@ -163,7 +163,7 @@ python3 main.py \
   --run_gsea \
   --supervised_ml \
   --experimental_condition HCD \
-  --sim_tx_info /path/to/simulated_reads/sim_tx_info.txt
+  --ground_truth /path/to/simulated_reads/sim_tx_info.txt
 ```
 
 ## Example 2: Human Data (hg38) Test with Bootstrapping and GSEA
@@ -220,3 +220,31 @@ python3 main.py \
   --experimental_condition HSV-1
 ```
 
+## Example 4: Human Data (hg38) Test with Bootstrapping, GSEA and Supervised ML
+
+```
+cd /home/tud03125/DoTT_Bioinformatics
+python3 main.py \
+  --gtf-file /home/tud03125/pipeline/hg38.knownGene.gtf \
+  --bam-files /home/tud03125/GSE59717/Total_RNA_mock/SRR1523653_Aligned.sortedByCoord.out.bam \
+              /home/tud03125/GSE59717/Total_RNA_mock/SRR1523667_Aligned.sortedByCoord.out.bam \
+              /home/tud03125/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523654_Aligned.sortedByCoord.out.bam \
+              /home/tud03125/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523655_Aligned.sortedByCoord.out.bam \
+              /home/tud03125/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523656_Aligned.sortedByCoord.out.bam \
+              /home/tud03125/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523657_Aligned.sortedByCoord.out.bam \
+              /home/tud03125/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523668_Aligned.sortedByCoord.out.bam \
+              /home/tud03125/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523669_Aligned.sortedByCoord.out.bam \
+              /home/tud03125/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523670_Aligned.sortedByCoord.out.bam \
+              /home/tud03125/GSE59717/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523671_Aligned.sortedByCoord.out.bam \
+  --species hg38 \
+  --extension 10000 \
+  --output-dir DoTT_HSV-1_mock_test \
+  --conditions mock,mock,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1 \
+  --bootstrap \
+  --n_boot 100 \
+  --consensus_threshold 0.5 \
+  --run_gsea \
+  --supervised_ml \
+  --experimental_condition HSV-1 \
+  --ground_truth /home/tud03125/pipeline/HSV-1_ground_truth.csv
+```
