@@ -130,7 +130,7 @@ Enable the unsupervised ML analysis module, which uses the DESeq2 results along 
 Enable supervised ML analysis (which compares DESeq2 results to simulation ground truth and trains an ML classifier).
 
 **--ground_truth**
-Path to the ground truth file (CSV or TXT format) Use ```sim_tx_info.txt``` as reference.
+Path to the ground truth file (CSV or TXT format). Use ```sim_tx_info.txt``` as reference.
 **Required if** ```--supervised_ml``` **is used.**
 
 **--experimental_condition**
