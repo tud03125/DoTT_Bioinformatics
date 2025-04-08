@@ -30,7 +30,16 @@ coldata <- data.frame(row.names = colnames(counts), condition = factor(condition
 
 # Create DESeq2 dataset and run the analysis
 dds <- DESeqDataSetFromMatrix(countData = counts, colData = coldata, design = ~ condition)
-dds <- DESeq(dds)
+#dds <- DESeq(dds)
+
+# --- Modified Dispersion Estimation ---
+# Instead of the standard DESeq(dds) call, estimate size factors and then use gene-wise dispersion estimates.
+dds <- estimateSizeFactors(dds)
+dds <- estimateDispersionsGeneEst(dds)
+dispersions(dds) <- mcols(dds)$dispGeneEst
+dds <- nbinomWaldTest(dds)
+
+# Retrieve results
 res <- results(dds)
 
 # Write DESeq2 results to CSV (without quotation marks)
@@ -94,7 +103,11 @@ if (args$bootstrap) {
     dds_boot <- DESeqDataSetFromMatrix(countData=boot_counts,
                                        colData=boot_coldata,
                                        design=~ condition)
-    dds_boot <- DESeq(dds_boot)
+    #dds_boot <- DESeq(dds_boot)
+    dds_boot <- estimateSizeFactors(dds_boot)
+    dds_boot <- estimateDispersionsGeneEst(dds_boot)
+    dispersions(dds_boot) <- mcols(dds_boot)$dispGeneEst
+    dds_boot <- nbinomWaldTest(dds_boot)
     res_boot <- results(dds_boot)
     res_boot_df <- as.data.frame(res_boot)
     
