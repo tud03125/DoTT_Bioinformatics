@@ -67,12 +67,15 @@ def load_ground_truth(ground_truth_file, mapping_gtf_file):
     # Standardize the ground truth column.
     # The original column (from the simulation) is 'DEstatus.2', but if you've preprocessed your data,
     # it might already be named 'ground_truth'.
+    # Check for 'DEstatus.2', 'DEstatus', or 'ground_truth'
     if "DEstatus.2" in gt_df.columns:
         gt_df["ground_truth"] = gt_df["DEstatus.2"].apply(lambda x: 1 if str(x).strip().upper() == "TRUE" else 0)
+    elif "DEstatus" in gt_df.columns:
+        gt_df["ground_truth"] = gt_df["DEstatus"].apply(lambda x: 1 if str(x).strip().upper() == "TRUE" else 0)
     elif "ground_truth" in gt_df.columns:
         gt_df["ground_truth"] = gt_df["ground_truth"].apply(lambda x: 1 if str(x).strip().upper() == "TRUE" else 0)
     else:
-        raise ValueError("Ground truth file must contain 'DEstatus.2' or 'ground_truth' column.")
+        raise ValueError("Ground truth file must contain 'DEstatus.2', 'DEstatus', or 'ground_truth' column.")
     
     return gt_df
 
