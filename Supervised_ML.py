@@ -86,11 +86,14 @@ def compare_to_ground_truth(ground_truth_file, sig_results_file, mapping_gtf_fil
     """
     gt_df = load_ground_truth(ground_truth_file, mapping_gtf_file)
     gt_df["gene"] = gt_df["gene"].astype(str)
+    gt_df_file = os.path.join(output_dir, "ground_truth_reference.csv")
+    gt_df.to_csv(gt_df_file, index=False)
     deseq = pd.read_csv(sig_results_file, index_col=0)
     deseq.index = deseq.index.astype(str)
 
     #merged = gt_df.merge(deseq[['padj', 'log2FoldChange']], left_on='gene', right_index=True, how='inner')
-    merged = deseq[['padj', 'log2FoldChange']].merge(gt_df[['gene','ground_truth']], left_index=True, right_on='gene', how='left')
+    #merged = deseq[['padj', 'log2FoldChange']].merge(gt_df[['gene','ground_truth']], left_index=True, right_on='gene', how='left')
+    merged = gt_df[['gene', 'ground_truth']].merge(deseq[['baseMean', 'log2FoldChange', 'lfcSE', 'stat', 'pvalue', 'padj']], left_on='gene', right_index=True, how='right')
     merged['ground_truth'] = merged['ground_truth'].fillna(0)
     merged['predicted'] = ((merged['padj'] < 0.05) & (abs(merged['log2FoldChange']) > 1)).astype(int)
     merged_file = os.path.join(output_dir, "merged_ground_truth_and_deseq_results.csv")
