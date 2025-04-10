@@ -81,21 +81,22 @@ def main():
     subprocess.run(r_cmd, check=True)
     
     # Define file paths produced by the DESeq2 script:
-    de_results_file = os.path.join(args.output_dir, "significant_extended_genes.csv")
-    de_predictions_file = os.path.join(args.output_dir, "absolute_significant_extended_genes_with_individual_means.csv")
+    deseq2_results_file = os.path.join(args.output_dir, "3_UTR_extended_differential_analysis_results.csv")
+    sig_results_file = os.path.join(args.output_dir, "significant_extended_genes.csv")
+    absolute_sig_results_file = os.path.join(args.output_dir, "absolute_significant_extended_genes_with_individual_means.csv")
     norm_counts_file = os.path.join(args.output_dir, "normalized_counts.csv")
     
     # Step 4: Merge gene regions and extract coordinates
     merged_annotation_file = os.path.join(args.output_dir, "merged_DoTT_annotation.bed")
-    merge_gene_regions(de_predictions_file, saf_file, merged_annotation_file)
-    extract_coordinates(de_predictions_file, saf_file, args.output_dir)
+    merge_gene_regions(absolute_sig_results_file, saf_file, merged_annotation_file)
+    extract_coordinates(absolute_sig_results_file, saf_file, args.output_dir)
     
     # Optional Module: GSEA Pre-ranked List
     if args.run_gsea:
         r_gsea_cmd = [
             "Rscript",
             "dott_gsea_preranked_list.R",
-            "--input_file", de_results_file,
+            "--input_file",  absolute_sig_results_file,
             "--output_dir", args.output_dir
         ]
         subprocess.run(r_gsea_cmd, check=True)
@@ -106,7 +107,7 @@ def main():
         if not args.experimental_condition:
             raise ValueError("For unsupervised ML, please provide --experimental_condition.")
         from Unsupervised_ML import run_unsupervised_ml
-        run_unsupervised_ml(de_predictions_file, norm_counts_file, args.output_dir, 
+        run_unsupervised_ml(absolute_sig_results_file, norm_counts_file, args.output_dir, 
                             args.experimental_condition, conditions_list=condition_list)
     
     # Optional Module: Supervised ML Analysis
@@ -116,17 +117,14 @@ def main():
         if not args.experimental_condition:
             raise ValueError("For supervised ML, please provide --experimental_condition.")
         from Supervised_ML import train_ml_classifier_cv, evaluate_ml_performance, compare_to_ground_truth
-        # Compare DESeq2 results to ground truth:
-        gt_merged, gt_cm, gt_roc_auc = compare_to_ground_truth(
-            args.ground_truth, de_results_file, args.gtf_file, args.output_dir)
+        # Compare DESeq2 results to ground truth using the significant results file
+        gt_merged, gt_cm, gt_roc_auc = compare_to_ground_truth(args.ground_truth, sig_results_file, args.gtf_file, args.output_dir)
         print("Ground truth comparison complete. ROC AUC from ground truth comparison before ML classifier:", gt_roc_auc)
 
-        # Train ML classifier using cross-validation:
-        cv_scores, final_model, pred_df, holdout_results = train_ml_classifier_cv(
-            args.ground_truth, de_results_file, args.gtf_file, args.output_dir, clf_cutoff=0.5, cv=5, test_size=0.2)
+        # Train ML classifier using cross-validation on the significant results file
+        cv_scores, final_model, pred_df, holdout_results = train_ml_classifier_cv(args.ground_truth, sig_results_file, args.gtf_file, args.output_dir, clf_cutoff=0.5, cv=5, test_size=0.2)
         # Evaluate ML performance:
-        merged_ml, cm_df, metrics_df = evaluate_ml_performance(
-            pred_df, holdout_results, args.ground_truth, args.gtf_file, args.output_dir)
+        merged_ml, cm_df, metrics_df = evaluate_ml_performance(pred_df, holdout_results, args.ground_truth, args.gtf_file, deseq2_results_file, args.output_dir)
         print("ML classifier ROC AUC:", metrics_df["ROC_AUC"].values[0])
 
     print("Pipeline finished successfully.")
