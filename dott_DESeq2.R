@@ -49,13 +49,15 @@ cat("DESeq2 results saved to", results_file, "\n")
 
 # Generate MA Plot
 ma_plot_file <- file.path(args$output_dir, "3_UTR_extended_MA_plot.svg")
-svg(ma_plot_file, width = 8, height = 6)
+#svg(ma_plot_file, width = 8, height = 6)
+svg(ma_plot_file, width = 12, height = 10)
 plotMA(res, main = "MA Plot", ylim = c(-2, 2))
 dev.off()
 
 # Generate Volcano Plot
 volcano_plot_file <- file.path(args$output_dir, "3_UTR_extended_Volcano_plot.svg")
-svg(volcano_plot_file, width = 8, height = 6)
+#svg(volcano_plot_file, width = 8, height = 6)
+svg(volcano_plot_file, width = 12, height = 10)
 EnhancedVolcano(res,
                 lab = rownames(res),
                 x = 'log2FoldChange',
