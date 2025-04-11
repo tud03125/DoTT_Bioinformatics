@@ -80,27 +80,9 @@ def load_ground_truth(ground_truth_file, mapping_gtf_file):
     return gt_df
 
 def compare_to_ground_truth(ground_truth_file, deseq_results_file, mapping_gtf_file, output_dir):
-    # Load and process the ground truth file (assumed to be tab-delimited)
-    gt = pd.read_csv(ground_truth_file, sep="\t")
-    gt.to_csv("ground_truth_reference.csv", index=False)
-    print("Original ground truth DataFrame saved to ground_truth_test.csv.")
     
-    # Load transcript-to-gene mapping from the GTF file
-    tx2gene = load_tx2gene_mapping(mapping_gtf_file)
-    print("Head of tx2gene mapping:")
-    for key, value in list(tx2gene.items())[:10]:
-        print(key, value)
-    tx2gene_df = pd.DataFrame(list(tx2gene.items()), columns=["transcript_id", "gene_name"])
-    tx2gene_df.to_csv("tx2gene_mapping_test.csv", index=False)
-    print("tx2gene mapping saved to tx2gene_mapping.csv.")
-    
-    # Map transcript IDs to gene names and drop any rows without a gene mapping.
-    gt['gene'] = gt['transcriptid'].map(tx2gene)
-    gt = gt.dropna(subset=['gene'])
-    # Create a standardized ground truth column (1 = TRUE, 0 = FALSE)
-    gt['ground_truth'] = gt['DEstatus.2'].apply(lambda x: 1 if str(x).strip().upper() == "TRUE" else 0)
-    gt.to_csv("ground_truth_processed.csv", index=False)
-    print("Processed ground truth saved to ground_truth_processed.csv.")
+    gt = load_ground_truth(ground_truth_file, mapping_gtf_file)
+    gt["gene"] = gt["gene"].astype(str)
     
     # Load DESeq2 results (ensure the gene identifiers match)
     deseq = pd.read_csv(deseq_results_file, index_col=0)
