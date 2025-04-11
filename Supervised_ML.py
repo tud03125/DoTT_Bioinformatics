@@ -79,69 +79,126 @@ def load_ground_truth(ground_truth_file, mapping_gtf_file):
     
     return gt_df
 
-def compare_to_ground_truth(ground_truth_file, sig_results_file, mapping_gtf_file, output_dir):
-    """
-    Merges the significant DESeq2 results with ground truth, computes a confusion matrix, ROC curve,
-    and additional performance metrics, and saves them.
-    """
-    gt_df = load_ground_truth(ground_truth_file, mapping_gtf_file)
-    gt_df["gene"] = gt_df["gene"].astype(str)
-    gt_df_file = os.path.join(output_dir, "ground_truth_reference.csv")
-    gt_df.to_csv(gt_df_file, index=False)
-    deseq = pd.read_csv(sig_results_file, index_col=0)
-    deseq.index = deseq.index.astype(str)
-
-    #merged = gt_df.merge(deseq[['padj', 'log2FoldChange']], left_on='gene', right_index=True, how='inner')
-    #merged = deseq[['padj', 'log2FoldChange']].merge(gt_df[['gene','ground_truth']], left_index=True, right_on='gene', how='left')
-    merged = gt_df[['gene', 'ground_truth']].merge(deseq[['baseMean', 'log2FoldChange', 'lfcSE', 'stat', 'pvalue', 'padj']], left_on='gene', right_index=True, how='right')
-    merged['ground_truth'] = merged['ground_truth'].fillna(0)
-    merged['predicted'] = ((merged['padj'] < 0.05) & (abs(merged['log2FoldChange']) > 1)).astype(int)
+def compare_to_ground_truth(ground_truth_file, deseq_results_file, mapping_gtf_file, output_dir):
+    # Load and process the ground truth file (assumed to be tab-delimited)
+    gt = pd.read_csv(ground_truth_file, sep="\t")
+    gt.to_csv("ground_truth_reference.csv", index=False)
+    print("Original ground truth DataFrame saved to ground_truth_test.csv.")
+    
+    # Load transcript-to-gene mapping from the GTF file
+    tx2gene = load_tx2gene_mapping(mapping_gtf_file)
+    print("Head of tx2gene mapping:")
+    for key, value in list(tx2gene.items())[:10]:
+        print(key, value)
+    tx2gene_df = pd.DataFrame(list(tx2gene.items()), columns=["transcript_id", "gene_name"])
+    tx2gene_df.to_csv("tx2gene_mapping_test.csv", index=False)
+    print("tx2gene mapping saved to tx2gene_mapping.csv.")
+    
+    # Map transcript IDs to gene names and drop any rows without a gene mapping.
+    gt['gene'] = gt['transcriptid'].map(tx2gene)
+    gt = gt.dropna(subset=['gene'])
+    # Create a standardized ground truth column (1 = TRUE, 0 = FALSE)
+    gt['ground_truth'] = gt['DEstatus.2'].apply(lambda x: 1 if str(x).strip().upper() == "TRUE" else 0)
+    gt.to_csv("ground_truth_processed.csv", index=False)
+    print("Processed ground truth saved to ground_truth_processed.csv.")
+    
+    # Load DESeq2 results (ensure the gene identifiers match)
+    deseq = pd.read_csv(deseq_results_file, index_col=0)
+    # Merge the ground truth with DESeq2 results based on the gene names.
+    merged = gt.merge(deseq[['padj', 'log2FoldChange']], left_on='gene', right_index=True, how='inner')
+    # Compute the predicted status using a padj threshold and log2FoldChange cutoff.
+    merged['predicted'] = ((merged['padj'] < 0.05) & (merged['log2FoldChange'] > 1)).astype(int)
+    
     merged_file = os.path.join(output_dir, "merged_ground_truth_and_deseq_results.csv")
     merged.to_csv(merged_file, index=False)
-    print("Merged ground truth and DESeq2 results saved to:", merged_file)
-
+    print(f"Merged ground truth and DESeq2 results saved to: {merged_file}")
+    
+    # Compute the confusion matrix.
     y_true = merged['ground_truth']
     y_pred = merged['predicted']
-    cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
+    cm = confusion_matrix(y_true, y_pred)
     cm_df = pd.DataFrame(cm, index=["Actual_NonDE", "Actual_DE"], columns=["Pred_NonDE", "Pred_DE"])
-    cm_file = os.path.join(output_dir, "confusion_matrix.csv")
-    cm_df.to_csv(cm_file, index=False)
-    print("Confusion Matrix saved to:", cm_file)
-
-    fpr, tpr, _ = roc_curve(y_true, merged['padj'])
-    roc_auc_val = auc(fpr, tpr)
+    cm_file = os.path.join(output_dir, "Original_confusion_matrix.csv")
+    cm_df.to_csv(cm_file)
+    print("Confusion Matrix:")
+    print(cm_df)
+    print(f"Confusion matrix saved to: {cm_file}")
+    
+    # For ROC and precision-recall, compute a score based on adjusted padj values.
+    deseq['padj_adj'] = deseq['padj'].replace(0, 1e-300)
+    deseq['score'] = -np.log10(deseq['padj_adj'])
+    # Merge the score with the ground truth data.
+    merged = gt.merge(deseq[['score']], left_on='gene', right_index=True, how='inner')
+    merged = merged.dropna(subset=['score'])
+    
+    # Calculate ROC curve and AUC.
+    fpr, tpr, thresholds = roc_curve(merged['ground_truth'], merged['score'])
+    roc_auc = auc(fpr, tpr)
+    print(f"ROC AUC: {roc_auc:.2f}")
+    
     plt.figure()
-    plt.plot(fpr, tpr, label=f'ROC curve (AUC = {roc_auc_val:.2f})')
+    plt.plot(fpr, tpr, label=f'ROC curve (AUC = {roc_auc:.2f})')
     plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('ROC Curve: Ground Truth vs. DESeq2')
+    plt.title('ROC Curve: Ground Truth vs. DESeq2 Predictions')
     plt.legend(loc="lower right")
-    roc_plot_file = os.path.join(output_dir, "ROC_curve.svg")
+    roc_plot_file = os.path.join(output_dir, "Original_ROC_curve.svg")
     plt.savefig(roc_plot_file)
     plt.close()
-    print("ROC curve saved to:", roc_plot_file)
-
-    # Additional performance metrics:
-    acc = accuracy_score(y_true, y_pred)
-    f1 = f1_score(y_true, y_pred) if len(np.unique(y_true)) > 1 else float('nan')
-    sens = np.sum((y_true == 1) & (y_pred == 1)) / np.sum(y_true == 1) if np.sum(y_true == 1) > 0 else float('nan')
-    spec = np.sum((y_true == 0) & (y_pred == 0)) / np.sum(y_true == 0) if np.sum(y_true == 0) > 0 else float('nan')
-    perf_dict = {
-        "Accuracy": acc,
-        "F1_Score": f1,
-        "Sensitivity": sens,
-        "Specificity": spec,
-        "ROC_AUC": roc_auc_val
+    print(f"ROC curve plot saved to: {roc_plot_file}")
+    
+    # Calculate Precision-Recall curve and Average Precision.
+    pr_precision, pr_recall, pr_thresholds = precision_recall_curve(merged['ground_truth'], merged['score'])
+    avg_precision = average_precision_score(merged['ground_truth'], merged['score'])
+    print(f"Average Precision: {avg_precision:.2f}")
+    
+    plt.figure()
+    plt.plot(pr_recall, pr_precision, label=f'PR curve (AP = {avg_precision:.2f})')
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title('Precision-Recall Curve: Ground Truth vs. DESeq2 Predictions')
+    plt.legend(loc="upper right")
+    pr_plot_file = os.path.join(output_dir, "Original_PR_curve.svg")
+    plt.savefig(pr_plot_file)
+    plt.close()
+    print(f"Precision-Recall curve plot saved to: {pr_plot_file}")
+    
+    # Compute additional performance metrics from the confusion matrix.
+    try:
+        tn, fp, fn, tp = cm.ravel()
+    except ValueError:
+        tn, fp, fn, tp = 0, 0, 0, 0
+    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else float('nan')
+    specificity = tn / (tn + fp) if (tn + fp) > 0 else float('nan')
+    precision_val = tp / (tp + fp) if (tp + fp) > 0 else float('nan')
+    accuracy = (tp + tn) / (tn + fp + fn + tp) if (tn + fp + fn + tp) > 0 else float('nan')
+    f1 = 2 * precision_val * sensitivity / (precision_val + sensitivity) if (precision_val + sensitivity) > 0 else float('nan')
+    
+    metrics = {
+        "Sensitivity": sensitivity,
+        "Specificity": specificity,
+        "Precision": precision_val,
+        "Accuracy": accuracy,
+        "F1 Score": f1,
+        "ROC AUC": roc_auc,
+        "Average Precision": avg_precision
     }
-    perf_df = pd.DataFrame([perf_dict])
-    perf_file = os.path.join(output_dir, "Original_performance_metrics.csv")
-    perf_df.to_csv(perf_file, index=False)
-    print("Original performance metrics saved to:", perf_file)
+    
+    print("Performance Metrics:")
+    for metric, value in metrics.items():
+        print(f"{metric}: {value:.3f}")
+    
+    metrics_df = pd.DataFrame([metrics])
+    metrics_file = os.path.join(output_dir, "Original_performance_metrics.csv")
+    metrics_df.to_csv(metrics_file, index=False)
+    print(f"Original performance metrics saved to: {metrics_file}")
+    
+    return merged_file, cm_file, roc_plot_file
 
-    return merged, cm_df, roc_auc_val
-
-def train_ml_classifier_cv(ground_truth_file, sig_results_file, mapping_gtf_file, output_dir, clf_cutoff=0.5, cv=5, test_size=0.2):
+def train_ml_classifier_cv(ground_truth_file, deseq2_results_file, mapping_gtf_file, output_dir, clf_cutoff=0.5, cv=5, test_size=0.2):
     """
     Trains a supervised ML classifier using DESeq2 features and ground truth.
     Merges ground truth (loaded via load_ground_truth) with DESeq2 result data
@@ -150,7 +207,8 @@ def train_ml_classifier_cv(ground_truth_file, sig_results_file, mapping_gtf_file
     Returns cross-validation scores, the final model, and prediction DataFrames.
     """
     gt_df = load_ground_truth(ground_truth_file, mapping_gtf_file)
-    deseq = pd.read_csv(sig_results_file, index_col=0)
+    #deseq = pd.read_csv(sig_results_file, index_col=0)
+    deseq = pd.read_csv(deseq2_results_file, index_col=0)
     data = gt_df.merge(deseq[['baseMean', 'log2FoldChange', 'pvalue', 'padj']], left_on='gene', right_index=True, how='inner')
     data.dropna(subset=['padj'], inplace=True)
     data['padj_adj'] = data['padj'].replace(0, 1e-300)
@@ -221,6 +279,10 @@ def evaluate_ml_performance(pred_df, holdout_results, ground_truth_file, mapping
     #merged_ml = gt_df[['gene', 'ground_truth']].merge(pred_df, on='gene', how='inner')
     merged_ml = gt_df[['gene', 'ground_truth']].merge(pred_df, on='gene', how='right')
     merged_ml['ground_truth'] = merged_ml['ground_truth'].fillna(0)
+    # Fill missing padj values:
+    merged_ml['padj'] = merged_ml['padj'].fillna(1)
+    # Drop rows with missing log2FoldChange values if present:
+    merged_ml = merged_ml.dropna(subset=['log2FoldChange'])
     merged_ml_file = os.path.join(output_dir, "merged_ground_truth_and_ml_predictions.csv")
     merged_ml.to_csv(merged_ml_file, index=False)
     print("Merged ML predictions with ground truth saved to:", merged_ml_file)
@@ -228,10 +290,11 @@ def evaluate_ml_performance(pred_df, holdout_results, ground_truth_file, mapping
     # Compute confusion matrix and save it.
     y_true = merged_ml['ground_truth']
     y_pred = merged_ml['predicted_DE']
-    cm = confusion_matrix(y_true, y_pred, labels=[0,1])
+    cm = confusion_matrix(y_true, y_pred)
     cm_df = pd.DataFrame(cm, index=["Actual_NonDE", "Actual_DE"], columns=["Pred_NonDE", "Pred_DE"])
     cm_file = os.path.join(output_dir, "ml_confusion_matrix.csv")
-    cm_df.to_csv(cm_file, index=False)
+    #cm_df.to_csv(cm_file, index=False)
+    cm_df.to_csv(cm_file)
     print("ML Confusion Matrix saved to:", cm_file)
     
     # Compute ROC curve from predicted scores.
