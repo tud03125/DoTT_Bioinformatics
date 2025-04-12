@@ -117,17 +117,24 @@ def main():
         if not args.experimental_condition:
             raise ValueError("For supervised ML, please provide --experimental_condition.")
         from Supervised_ML import train_ml_classifier_cv, evaluate_ml_performance, compare_to_ground_truth
-        # Compare DESeq2 results to ground truth using the significant results file
-        #gt_merged, gt_cm, gt_roc_auc = compare_to_ground_truth(args.ground_truth, sig_results_file, args.gtf_file, args.output_dir)
+
+        # Compare DESeq2 results to ground truth using the DESeq2 results file
         gt_merged, gt_cm, gt_roc_auc = compare_to_ground_truth(args.ground_truth, deseq2_results_file, args.gtf_file, args.output_dir)
         print("Ground truth comparison complete. ROC AUC from ground truth comparison before ML classifier:", gt_roc_auc)
 
         # Train ML classifier using cross-validation on the DESeq2 results file
-        #cv_scores, final_model, pred_df, holdout_results = train_ml_classifier_cv(args.ground_truth, sig_results_file, args.gtf_file, args.output_dir, clf_cutoff=0.5, cv=5, test_size=0.2)
-        cv_scores, final_model, pred_df, holdout_results = train_ml_classifier_cv(args.ground_truth, deseq2_results_file, args.gtf_file, args.output_dir, clf_cutoff=0.5, cv=5, test_size=0.2)
-        # Evaluate ML performance:
-        merged_ml, cm_df, metrics_df = evaluate_ml_performance(pred_df, holdout_results, args.ground_truth, args.gtf_file, deseq2_results_file, args.output_dir)
-        print("ML classifier ROC AUC:", metrics_df["ROC_AUC"].values[0])
+        cv_scores, final_model, pred_df, holdout_results, cv_results = train_ml_classifier_cv(
+            args.ground_truth, deseq2_results_file, args.gtf_file, args.output_dir,
+            clf_cutoff=0.5, cv=5, test_size=0.2
+        )
+
+        # Evaluate ML performance by merging the ML predictions with the ground truth,
+        # and by additionally evaluating holdout and cross-validation performance.
+        merged_ml, merged_holdout, merged_cv, cm_df, training_metrics_df = evaluate_ml_performance(
+            pred_df, holdout_results, args.ground_truth, args.gtf_file, deseq2_results_file,
+            args.output_dir, cv_results=cv_results
+        )
+        print("ML classifier ROC AUC (training set):", training_metrics_df["ROC_AUC"].values[0])
 
     print("Pipeline finished successfully.")
 
