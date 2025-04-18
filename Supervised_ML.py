@@ -143,21 +143,39 @@ def compare_to_ground_truth(ground_truth_file, deseq_results_file, mapping_gtf_f
     metrics_file = os.path.join(output_dir, "DESeq2_performance_metrics.csv")
     metrics_df.to_csv(metrics_file, index=False)
 
-    # 2) 5-fold CV on DESeq2 rule
+    # 2) 10-fold CV on DESeq2 rule
     skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+    
+    # Initialize accumulators for per-fold CV-merging
+    gene_cv_all       = []
+    y_cv_all          = []
+    padj_cv_all       = []
+    log2fc_cv_all     = []
+    pred_cv_all       = []
+    score_cv_all      = []
+    
     aucs, aps, accs, sens, specs = [], [], [], [], []
-    y_cv_all, score_cv_all, pred_cv_all = [], [], []
-
     for _, test_idx in skf.split(merged[['padj','log2FoldChange']], merged['ground_truth']):
         fold = merged.iloc[test_idx]
-        y_t = fold['ground_truth']
-        y_p = ((fold['padj'] < 0.05) & (fold['log2FoldChange'] > 1)).astype(int)
-        score = -np.log10(fold['padj'].replace(0,1e-300))
 
-        # accumulate
+        # track which genes are in this fold
+        gene_cv_all.extend(fold['gene'].tolist())
+
+        # true labels
+        y_t = fold['ground_truth']
         y_cv_all.extend(y_t.tolist())
-        score_cv_all.extend(score.tolist())
+
+        # store the raw DESeq2 metrics
+        padj_cv_all.extend(fold['padj'].tolist())
+        log2fc_cv_all.extend(fold['log2FoldChange'].tolist())
+
+        # rule-based prediction
+        y_p = ((fold['padj'] < 0.05) & (fold['log2FoldChange'] > 1)).astype(int)
         pred_cv_all.extend(y_p.tolist())
+
+        # score for ROC (−log₁₀(padj))
+        score = -np.log10(fold['padj'].replace(0, 1e-300))
+        score_cv_all.extend(score.tolist())
 
         # per-fold metrics
         fpr_cv, tpr_cv, _ = roc_curve(y_t, score)
@@ -187,7 +205,7 @@ def compare_to_ground_truth(ground_truth_file, deseq_results_file, mapping_gtf_f
     plt.plot(fpr_all, tpr_all, label=f'CV ROC (AUC = {auc(fpr_all, tpr_all):.2f})')
     plt.plot([0,1],[0,1],'k--')
     plt.xlabel('False Positive Rate'); plt.ylabel('True Positive Rate')
-    plt.title('DESeq2 5-fold CV ROC Curve')
+    plt.title('DESeq2 10-fold CV ROC Curve')
     plt.legend(loc='lower right')
     plt.savefig(os.path.join(output_dir, 'DESeq2_CV_ROC_curve.svg'))
     plt.close()
@@ -197,7 +215,7 @@ def compare_to_ground_truth(ground_truth_file, deseq_results_file, mapping_gtf_f
     plt.figure()
     plt.plot(rc_all, pr_all, label=f'CV PR (AP = {average_precision_score(y_cv_all, score_cv_all):.2f})')
     plt.xlabel('Recall'); plt.ylabel('Precision')
-    plt.title('DESeq2 5-fold CV PR Curve')
+    plt.title('DESeq2 10-fold CV PR Curve')
     plt.legend(loc='upper right')
     plt.savefig(os.path.join(output_dir, 'DESeq2_CV_PR_curve.svg'))
     plt.close()
@@ -209,6 +227,19 @@ def compare_to_ground_truth(ground_truth_file, deseq_results_file, mapping_gtf_f
         index=["Actual_NonDE","Actual_DE"],
         columns=["Pred_NonDE","Pred_DE"]
     ).to_csv(os.path.join(output_dir, 'DESeq2_CV_confusion_matrix.csv'))
+
+    # --- NEW: save merged ground truth + DESeq2 rule CV results ---
+    cv_merged_df = pd.DataFrame({
+        'gene':           gene_cv_all,
+        'ground_truth':   y_cv_all,
+        'padj':           padj_cv_all,
+        'log2FoldChange': log2fc_cv_all,
+        'predicted':      pred_cv_all,
+        'score':          score_cv_all
+    })
+    cv_merged_file = os.path.join(output_dir, "merged_ground_truth_and_deseq_cv_results.csv")
+    cv_merged_df.to_csv(cv_merged_file, index=False)
+    print("Merged DESeq2 CV results with ground truth saved to:", cv_merged_file)
 
     return merged_file, cm_file, roc_auc_val
 
@@ -493,7 +524,7 @@ def evaluate_ml_performance(pred_df, holdout_results, ground_truth_file, mapping
         plt.plot([0, 1], [0, 1], 'k--')
         plt.xlabel('False Positive Rate')
         plt.ylabel('True Positive Rate')
-        plt.title('ML CV ROC Curve')
+        plt.title('ML 10-fold CV ROC Curve')
         plt.legend(loc="lower right")
         roc_cv_file = os.path.join(output_dir, "ml_cv_ROC_curve.svg")
         plt.savefig(roc_cv_file)
@@ -506,7 +537,7 @@ def evaluate_ml_performance(pred_df, holdout_results, ground_truth_file, mapping
         plt.plot(pr_recall_cv, pr_precision_cv, label=f'ML CV PR (AP = {avg_precision_cv:.2f})')
         plt.xlabel('Recall')
         plt.ylabel('Precision')
-        plt.title('ML CV Precision-Recall Curve')
+        plt.title('ML 10-fold CV Precision-Recall Curve')
         plt.legend(loc="upper right")
         pr_cv_file = os.path.join(output_dir, "ml_cv_PR_curve.svg")
         plt.savefig(pr_cv_file)
