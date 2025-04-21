@@ -154,7 +154,7 @@ python3 main.py \
               /path/to/simulated_reads/STAR_sample_09_Aligned.sortedByCoord.out.bam \
               /path/to/simulated_reads/STAR_sample_10_Aligned.sortedByCoord.out.bam \
   --species mm39 \
-  --extension 10000 \
+  --extension 2500 \
   --output-dir DoTT_simulation_test \
   --conditions Fasted,Fasted,Fasted,Fasted,Fasted,HCD,HCD,HCD,HCD,HCD \
   --bootstrap \
@@ -183,7 +183,7 @@ python3 main.py \
               /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523670_Aligned.sortedByCoord.out.bam \
               /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523671_Aligned.sortedByCoord.out.bam \
   --species hg38 \
-  --extension 10000 \
+  --extension 2500 \
   --output-dir DoTT_HSV-1_mock_test \
   --conditions mock,mock,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1 \
   --bootstrap \
@@ -209,7 +209,7 @@ python3 main.py \
               /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523670_Aligned.sortedByCoord.out.bam \
               /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523671_Aligned.sortedByCoord.out.bam \
   --species hg38 \
-  --extension 10000 \
+  --extension 2500 \
   --output-dir DoTT_HSV-1_mock_test \
   --conditions mock,mock,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1 \
   --bootstrap \
@@ -231,7 +231,7 @@ python3 main.py \
               /path/to/human/dataset/4sU-RNA_Herpes_simplex_virus_1_strain_17/SRR1523666_Aligned.sortedByCoord.out.bam \
               /path/to/human/dataset/4sU-RNA_Herpes_simplex_virus_1_strain_17/SRR1523680_Aligned.sortedByCoord.out.bam \
   --species hg38 \
-  --extension 10000 \
+  --extension 2500 \
   --output-dir DoTT_HSV-1_mock_4sU-RNA_test \
   --conditions mock,mock,HSV-1,HSV-1 \
   --bootstrap \
