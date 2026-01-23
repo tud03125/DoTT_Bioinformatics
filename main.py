@@ -17,6 +17,7 @@ def main():
     parser.add_argument("--species", choices=["mm10","mm39","hg38","hg19"], required=True)
     parser.add_argument("--id-type", choices=["Ensembl_ID","Symbol"], default="Symbol")
     parser.add_argument("--extension", type=int, default=2500)
+    parser.add_argument("--gap", type=int, default=0, help="Bases to skip downstream of TTS")
     parser.add_argument("--dynamic", action="store_true")
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--conditions", required=True)
@@ -39,6 +40,7 @@ def main():
     saf_file = generate_saf(
         gtf_file=args.gtf_file,
         extension=args.extension,
+        gap=args.gap,
         output_dir=args.output_dir,
         dynamic=args.dynamic,
         bam_file_for_dynamic=(args.bam_files[0] if args.dynamic else None),
