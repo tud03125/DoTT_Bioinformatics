@@ -34,9 +34,9 @@ def dynamic_region_extension(bam_file, chrom, ref_point, strand, max_extension=1
             last_valid = region_end if strand == "+" else region_start
     return (ref_point, last_valid) if strand == "+" else (last_valid, ref_point)
 
-def generate_saf(gtf_file, extension, output_dir, dynamic, bam_file_for_dynamic, species, id_type, kgx_file="kgXref.txt.gz"):
+def generate_saf(gtf_file, extension, output_dir, dynamic, bam_file_for_dynamic, species, id_type, kgx_file="kgXref.txt.gz", gap=0):
     os.makedirs(output_dir, exist_ok=True)
-    output_saf = os.path.join(output_dir, f"3utr_{extension}bp_extended_regions.saf")
+    output_saf = os.path.join(output_dir, f"3utr_ext{extension}bp_gap{gap}bp_extended_regions.saf")
     
     if species == "hg19":
         gtf = load_gtf_custom(gtf_file)
@@ -89,10 +89,10 @@ def generate_saf(gtf_file, extension, output_dir, dynamic, bam_file_for_dynamic,
     else:
         def calculate_fixed(row, extension):
             if row["Strand"].strip() == "+":
-                return int(row["End"]), int(row["End"]) + extension
+                return int(row["End"]) + gap, int(row["End"]) + gap + extension
             else:
-                return max(int(row["Start"]) - extension, 1), int(row["Start"])
-        transcript[["Start_ext", "End_ext"]] = transcript.apply(lambda row: pd.Series(calculate_fixed(row, extension)), axis=1)
+                return max(int(row["Start"]) - gap - extension, 1), max(int(row["Start"]) - gap, 1)
+        transcript[["Start_ext", "End_ext"]] = transcript.apply(lambda row: pd.Series(calculate_fixed(row, extension, gap)), axis=1)
     
     saf_df = transcript[[gene_col, "Chr", "Start_ext", "End_ext", "Strand"]].dropna()
     saf_df.columns = ["GeneID", "Chr", "Start", "End", "Strand"]
