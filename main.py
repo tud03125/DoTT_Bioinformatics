@@ -130,7 +130,7 @@ def main():
                 deseq2_results_file, args.output_dir,
                 cv_results=cv_results
             )
-        print(f"RF training ROC AUC: {training_metrics_df['ROC_AUC'].iloc:.3f}")
+        print(f"RF training ROC AUC: {training_metrics_df['ROC_AUC'].iloc[0]:.3f}")
     
     print("Pipeline finished successfully.")
 
