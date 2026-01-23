@@ -28,6 +28,7 @@ def dynamic_region_extension(bam_file, chrom, ref_point, strand, max_extension=1
             else:
                 region_start = max(1, ref_point - offset)
                 region_end = ref_point
+            
             count = bam.count(contig=chrom, start=region_start, end=region_end)
             if count < count_threshold:
                 break
@@ -36,6 +37,7 @@ def dynamic_region_extension(bam_file, chrom, ref_point, strand, max_extension=1
 
 def generate_saf(gtf_file, extension, output_dir, dynamic, bam_file_for_dynamic, species, id_type, kgx_file="kgXref.txt.gz", gap=0):
     os.makedirs(output_dir, exist_ok=True)
+    # Include gap in filename
     output_saf = os.path.join(output_dir, f"3utr_ext{extension}bp_gap{gap}bp_extended_regions.saf")
     
     if species == "hg19":
@@ -49,54 +51,76 @@ def generate_saf(gtf_file, extension, output_dir, dynamic, bam_file_for_dynamic,
     if species in ["hg38", "hg19"]:
         transcript["GeneID"] = transcript["Attributes"].str.extract(r'gene_id\s+"([^"]+)"')
         transcript["TranscriptID"] = transcript["Attributes"].str.extract(r'transcript_id\s+"([^"]+)"')
-        transcript["GeneID"] = transcript["GeneID"].apply(lambda x: x.split('.')[0] if pd.notna(x) else x)
-        transcript["TranscriptID"] = transcript["TranscriptID"].apply(lambda x: x.split('.')[0] if pd.notna(x) else x)
         
-        kgxref = pd.read_csv(kgx_file, sep="\t", compression="gzip", header=None,
+        # --- FINAL ROBUST FIX ---
+        # We use .str.get(0) to ensure we get the string, not a list, and not the accessor object.
+        # This turns "ENST00000456328.2" into "ENST00000456328" safely.
+        transcript["GeneID"] = transcript["GeneID"].astype(str).str.split('.').str.get(0)
+        transcript["TranscriptID"] = transcript["TranscriptID"].astype(str).str.split('.').str.get(0)
+        # ------------------------
+        
+        # Added low_memory=False to prevent DtypeWarning
+        kgxref = pd.read_csv(kgx_file, sep="\t", compression="gzip", header=None, low_memory=False,
                              names=["kgID", "mRNA", "spID", "spDisplayID", "geneSymbol", 
                                     "refseq", "protAcc", "description", "rfamAcc", "tRnaName"])
+        
+        # Ensure kgID is also cleaned of versions if necessary
+        kgxref["kgID"] = kgxref["kgID"].astype(str).str.split('.').str.get(0)
         kgxref_dict = pd.Series(kgxref.geneSymbol.values, index=kgxref.kgID).to_dict()
+        
         mg = mygene.MyGeneInfo()
         
         def map_to_official(row):
-            gene_id = row["GeneID"]
-            transcript_id = row["TranscriptID"]
+            gene_id = str(row["GeneID"])
+            transcript_id = str(row["TranscriptID"])
+            
+            # Check dictionary first
+            if gene_id in kgxref_dict:
+                return kgxref_dict[gene_id]
+                
             if gene_id == transcript_id:
                 try:
                     with contextlib.redirect_stderr(open(os.devnull, "w")):
                         result = mg.query(transcript_id, scopes="ensembl.transcript", fields="symbol", species="human", verbose=False)
-                    if result.get("hits"):
-                        return result["hits"][0].get("symbol", gene_id)
+                    if result and result.get("hits"):
+                        return result["hits"].get("symbol", gene_id)
                     else:
                         return gene_id
                 except Exception:
                     return gene_id
             else:
                 return kgxref_dict.get(gene_id, gene_id)
+        
         transcript["OfficialGene"] = transcript.apply(map_to_official, axis=1)
         gene_col = "OfficialGene"
     else:
         transcript["GeneID"] = transcript["Attributes"].str.extract(r'gene_id "([^"]+)"')
-        transcript["GeneID"] = transcript["GeneID"].apply(lambda x: x.split('.')[0] if pd.notna(x) else x)
+        # Apply same robust fix for mouse/other species
+        transcript["GeneID"] = transcript["GeneID"].astype(str).str.split('.').str.get(0)
         gene_col = "GeneID"
-    
+
     if dynamic and bam_file_for_dynamic:
         def calc_dynamic(row):
             ref_point = int(row["End"]) if row["Strand"].strip() == "+" else int(row["Start"])
             start_ext, end_ext = dynamic_region_extension(bam_file_for_dynamic, row["Chr"], ref_point, row["Strand"].strip(), max_extension=extension)
             return pd.Series([start_ext, end_ext])
+        
         transcript[["Start_ext", "End_ext"]] = transcript.apply(calc_dynamic, axis=1)
     else:
-        def calculate_fixed(row, extension):
+        # Gap logic
+        def calculate_fixed(row, extension, gap):
             if row["Strand"].strip() == "+":
+                # Start = End + Gap
                 return int(row["End"]) + gap, int(row["End"]) + gap + extension
             else:
+                # Start = Start - Gap - Extension
                 return max(int(row["Start"]) - gap - extension, 1), max(int(row["Start"]) - gap, 1)
+        
         transcript[["Start_ext", "End_ext"]] = transcript.apply(lambda row: pd.Series(calculate_fixed(row, extension, gap)), axis=1)
-    
+
     saf_df = transcript[[gene_col, "Chr", "Start_ext", "End_ext", "Strand"]].dropna()
     saf_df.columns = ["GeneID", "Chr", "Start", "End", "Strand"]
     saf_df.to_csv(output_saf, sep="\t", index=False)
-    
     print(f"Extended SAF file saved to {output_saf}")
+    
     return output_saf
