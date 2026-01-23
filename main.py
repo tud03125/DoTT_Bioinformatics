@@ -16,7 +16,7 @@ def main():
     parser.add_argument("--bam-files", nargs="+", required=True)
     parser.add_argument("--species", choices=["mm10","mm39","hg38","hg19"], required=True)
     parser.add_argument("--id-type", choices=["Ensembl_ID","Symbol"], default="Symbol")
-    parser.add_argument("--extension", type=int, default=10000)
+    parser.add_argument("--extension", type=int, default=2500)
     parser.add_argument("--dynamic", action="store_true")
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--conditions", required=True)
