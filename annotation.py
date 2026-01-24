@@ -19,6 +19,7 @@ def load_gtf_custom(gtf_file):
     return df
 
 def dynamic_region_extension(bam_file, chrom, ref_point, strand, max_extension=10000, step=100, count_threshold=5):
+    # This function processes ONE bam file path (string) at a time
     with pysam.AlignmentFile(bam_file, "rb") as bam:
         last_valid = ref_point
         for offset in range(step, max_extension + step, step):
@@ -37,7 +38,7 @@ def dynamic_region_extension(bam_file, chrom, ref_point, strand, max_extension=1
 
 def generate_saf(gtf_file, extension, output_dir, dynamic, bam_file_for_dynamic, species, id_type, kgx_file="kgXref.txt.gz", gap=0):
     os.makedirs(output_dir, exist_ok=True)
-    # Include gap in filename
+    # Include gap in filename for clarity
     output_saf = os.path.join(output_dir, f"3utr_ext{extension}bp_gap{gap}bp_extended_regions.saf")
     
     if species == "hg19":
@@ -52,19 +53,17 @@ def generate_saf(gtf_file, extension, output_dir, dynamic, bam_file_for_dynamic,
         transcript["GeneID"] = transcript["Attributes"].str.extract(r'gene_id\s+"([^"]+)"')
         transcript["TranscriptID"] = transcript["Attributes"].str.extract(r'transcript_id\s+"([^"]+)"')
         
-        # --- FINAL ROBUST FIX ---
-        # We use .str.get(0) to ensure we get the string, not a list, and not the accessor object.
-        # This turns "ENST00000456328.2" into "ENST00000456328" safely.
+        # --- ROBUST ID FIX ---
         transcript["GeneID"] = transcript["GeneID"].astype(str).str.split('.').str.get(0)
         transcript["TranscriptID"] = transcript["TranscriptID"].astype(str).str.split('.').str.get(0)
-        # ------------------------
+        # ---------------------
         
         # Added low_memory=False to prevent DtypeWarning
         kgxref = pd.read_csv(kgx_file, sep="\t", compression="gzip", header=None, low_memory=False,
                              names=["kgID", "mRNA", "spID", "spDisplayID", "geneSymbol", 
                                     "refseq", "protAcc", "description", "rfamAcc", "tRnaName"])
         
-        # Ensure kgID is also cleaned of versions if necessary
+        # Ensure kgID is also cleaned of versions
         kgxref["kgID"] = kgxref["kgID"].astype(str).str.split('.').str.get(0)
         kgxref_dict = pd.Series(kgxref.geneSymbol.values, index=kgxref.kgID).to_dict()
         
@@ -102,12 +101,45 @@ def generate_saf(gtf_file, extension, output_dir, dynamic, bam_file_for_dynamic,
     if dynamic and bam_file_for_dynamic:
         def calc_dynamic(row):
             ref_point = int(row["End"]) if row["Strand"].strip() == "+" else int(row["Start"])
-            start_ext, end_ext = dynamic_region_extension(bam_file_for_dynamic, row["Chr"], ref_point, row["Strand"].strip(), max_extension=extension)
-            return pd.Series([start_ext, end_ext])
+            strand = row["Strand"].strip()
+            
+            # 1. Normalize input to always be a list
+            if isinstance(bam_file_for_dynamic, list):
+                bams = bam_file_for_dynamic
+            else:
+                bams = [bam_file_for_dynamic]
+            
+            # 2. Initialize final coordinates to the reference point (i.e., extension = 0)
+            final_start = ref_point
+            final_end = ref_point
+            
+            # 3. Iterate through EVERY bam file in the list.
+            # This loop structure prevents the "expected str, not list" error 
+            # because 'bam_path' is guaranteed to be a single item from the list.
+            for bam_path in bams:
+                # Extra safety: cast to string to ensure it's a path
+                safe_path = str(bam_path)
+                
+                # Calculate extension for this specific BAM
+                s, e = dynamic_region_extension(safe_path, row["Chr"], ref_point, strand, max_extension=extension)
+                
+                # Update maximum extension logic
+                if strand == "+":
+                    # For positive strand, we want the largest End coordinate
+                    if e > final_end:
+                        final_end = e
+                else:
+                    # For negative strand, we want the smallest Start coordinate (furthest upstream)
+                    # Note: We initialize final_start to ref_point. If s is smaller, it means we extended.
+                    if s < final_start:
+                        final_start = s
+                        
+            return pd.Series([final_start, final_end])
         
+        print("Calculating dynamic extensions across all BAM files. This may take some time...")
         transcript[["Start_ext", "End_ext"]] = transcript.apply(calc_dynamic, axis=1)
     else:
-        # Gap logic
+        # Gap logic for fixed extension
         def calculate_fixed(row, extension, gap):
             if row["Strand"].strip() == "+":
                 # Start = End + Gap
