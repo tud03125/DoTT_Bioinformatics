@@ -21,19 +21,54 @@ def load_gtf_custom(gtf_file):
 def dynamic_region_extension(bam_file, chrom, ref_point, strand, max_extension=10000, step=100, count_threshold=5):
     # This function processes ONE bam file path (string) at a time
     with pysam.AlignmentFile(bam_file, "rb") as bam:
+        # 1. Get chromosome length from BAM header to prevent overflow errors
+        try:
+            chrom_len = bam.header.get_reference_length(chrom)
+        except ValueError:
+            # If chrom is not in BAM (e.g., "chr1" vs "1"), try stripping/adding "chr"
+            if chrom.startswith("chr"):
+                alt_chrom = chrom[3:]
+            else:
+                alt_chrom = "chr" + chrom
+            
+            try:
+                chrom_len = bam.header.get_reference_length(alt_chrom)
+                chrom = alt_chrom # Update chrom to match BAM
+            except ValueError:
+                # Chromosome missing from BAM entirely; return original point
+                return ref_point, ref_point
+
         last_valid = ref_point
+        
         for offset in range(step, max_extension + step, step):
             if strand == "+":
                 region_start = ref_point
-                region_end = ref_point + offset
+                # 2. CLAMP: Ensure end does not exceed chromosome length
+                region_end = min(ref_point + offset, chrom_len)
             else:
-                region_start = max(1, ref_point - offset)
+                # 2. CLAMP: Ensure start is not less than 0
+                region_start = max(0, ref_point - offset)
                 region_end = ref_point
             
-            count = bam.count(contig=chrom, start=region_start, end=region_end)
+            # If our start/end are invalid after clamping (e.g. start > end), stop.
+            if region_start >= region_end:
+                break
+
+            # 3. Safe count with try-except as final safety net
+            try:
+                count = bam.count(contig=chrom, start=region_start, end=region_end)
+            except ValueError:
+                break
+
             if count < count_threshold:
                 break
+            
             last_valid = region_end if strand == "+" else region_start
+            
+            # If we hit the end of the chromosome, stop the loop to avoid next iteration error
+            if (strand == "+" and region_end == chrom_len) or (strand == "-" and region_start == 0):
+                break
+
     return (ref_point, last_valid) if strand == "+" else (last_valid, ref_point)
 
 def generate_saf(gtf_file, extension, output_dir, dynamic, bam_file_for_dynamic, species, id_type, kgx_file="kgXref.txt.gz", gap=0):
