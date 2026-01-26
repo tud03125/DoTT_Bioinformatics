@@ -1,15 +1,36 @@
-# DoTT-ML
-A bioinformatics pipeline for analyzing disruption of transcriptional termination (DoTT) using Python and R, designed for both mouse and human datasets.
+# DoTT-ML: A Condition-Aware Pipeline for Detecting Disruption of Transcription Termination
+**DoTT-ML** is a bioinformatics pipeline designed to detect and quantify Disruption of Transcription Termination (DoTT) events from RNA-seq using Python and R, designed for both mouse and human datasets.
 
 ## Overview
 This repository contains Python pipeline for performing DoTT (disruption of transcriptional termination) analysis. It integrates multiple processing steps such as generating SAF files from GTF annotations, running featureCounts, filtering counts, differential expression analysis with DESeq2 (via rpy2), and merging significant gene regions. The pipeline supports both mouse (mm39) and human (hg38/hg19) datasets with flexible input parameters.
+
+Key capabilities:
+*   **Condition-Aware:** Directly compares readthrough signal between groups using DESeq2.
+*   **Versatile:** Optimized for both **Total RNA-seq** (via a configurable `gap` parameter) and **Nascent/RIP-seq**.
+*   **Machine Learning-Enhanced:** Optional Random Forest module to refine candidate prioritization using read density features.
+
+## Key Features
+
+1.  **Configurable "Gap" Parameter:**
+    *   Allows exclusion of the immediate downstream region (e.g., 1000 bp) to filter out polymerase "slop" and natural termination noise in Total RNA-seq data.
+    *   Can be set to 0 bp for Nascent RNA (4sU) or RIP-seq to capture immediate readthrough events.
+
+2.  **Optimized Extension Windows:**
+    *   Default extension of **2.5 kb** was selected based on systematic sensitivity analysis (0.5–10 kb) to maximize signal-to-noise ratio.
+
+3.  **Two Statistical Profiles:**
+    *   **Robust Mode (Default):** Implements Independent Hypothesis Weighting (IHW) and strict low-count filtering to minimize false positives in low-depth regions.
+    *   **Classic Mode:** Standard DESeq2 Wald test.
+
+4.  **Supervised Refinement:**
+    *   Uses a Random Forest classifier trained on simulated readthrough data to recover subtle DoTT events that might be missed by linear statistical thresholds alone.
 
 ## Features
 - **Modular Design:**
 The pipeline is organized into distinct modules for annotation, read quantification (featureCounts), DESeq2 analysis, interval merging, coordinate extraction, and machine learning. This makes it easier to maintain, update, and customize.
 
 - **Flexible Annotation and SAF Generation:**
-Reads a GTF file (e.g., mm39 or hg38) to generate a simplified annotation format (SAF) file. Supports both fixed and dynamic (if enabled) region extension.
+Reads a GTF file (e.g., mm39 or hg38) to generate a simplified annotation format (SAF) file of a given extension length and a given starting point. Supports both fixed and dynamic (if enabled) region extension.
 
 - **Robust Read Quantification:**
 Automatically detects paired-end/single-end data and runs featureCounts to generate raw counts, then cleans and prepares these for downstream DESeq2 analysis.
@@ -41,10 +62,18 @@ Users provide input file paths via command-line arguments. The pipeline supports
 Prerequisites for Python packages are provided in requirements.txt/environment.yml, and R packages can be installed via an included R script or the instructions in the README.
 
 ## Installation
+
+### Prerequisites
+*   **Python 3.8+**
+*   **R 4.0+**
+*   **SAMtools** and **featureCounts** (Subread package) must be in your system PATH.
+  
 1. **Clone the Repository:**
    ```bash
-   gh repo clone tud03125/DoTT-ML
+   git clone https://github.com/tud03125/DoTT-ML.git
    cd DoTT-ML
+   conda env create -f environment.yml
+   conda activate dott_pipeline
    
 2. **Pre-requisites (using pip):**
    ```
@@ -98,6 +127,11 @@ Species option. For mouse use ```mm39```; for human use ```hg38``` or ```hg19```
 
 **--extension**
 Fixed extension length in bases (e.g., ```10000```).
+
+**--gap**
+Distance to skip downstream of gene end before counting.
+*   **Use `1000`** for Total RNA (removes termination noise).
+*   **Use `0`** for Nascent RNA (4sU) or RIP-seq.
 
 **--output-dir**
 Directory where all output files will be written.
@@ -161,6 +195,7 @@ python3 main.py \
               /path/to/simulated_reads/STAR_sample_10_Aligned.sortedByCoord.out.bam \
   --species mm39 \
   --extension 2500 \
+  --gap  \
   --output-dir DoTT_simulation_test \
   --conditions Fasted,Fasted,Fasted,Fasted,Fasted,HCD,HCD,HCD,HCD,HCD \
   --bootstrap \
@@ -191,6 +226,7 @@ python3 main.py \
               /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523671_Aligned.sortedByCoord.out.bam \
   --species hg38 \
   --extension 2500 \
+  --gap  \
   --output-dir DoTT_HSV-1_mock_test \
   --conditions mock,mock,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1 \
   --bootstrap \
@@ -218,6 +254,7 @@ python3 main.py \
               /path/to/human/dataset/Total_RNA_Herpes_simplex_virus_1_strain_17/SRR1523671_Aligned.sortedByCoord.out.bam \
   --species hg38 \
   --extension 2500 \
+  --gap  \
   --output-dir DoTT_HSV-1_mock_test \
   --conditions mock,mock,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1,HSV-1 \
   --bootstrap \
@@ -241,6 +278,7 @@ python3 main.py \
               /path/to/human/dataset/4sU-RNA_Herpes_simplex_virus_1_strain_17/SRR1523680_Aligned.sortedByCoord.out.bam \
   --species hg38 \
   --extension 2500 \
+  --gap  \
   --output-dir DoTT_HSV-1_mock_4sU-RNA_test \
   --conditions mock,mock,HSV-1,HSV-1 \
   --bootstrap \
