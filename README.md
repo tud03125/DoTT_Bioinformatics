@@ -94,7 +94,7 @@ Prerequisites for Python packages are provided in requirements.txt/environment.y
 
     - ```argparse```, ```ggplot2```, ```svglite```, ```data.table```, ```readr```, ```dplyr```, ```tidyverse```, ```ggbeeswarm```, ```stringr```, ```ggrastr``` (install via CRAN)
    
-   To install these packages, you can run the following in R:
+   To install these packages, you can run ```Rscript install_R_packages.R``` or the following in R:
 
    ```
    # For CRAN packages
