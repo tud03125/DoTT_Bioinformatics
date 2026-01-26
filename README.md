@@ -300,3 +300,11 @@ python3 main.py \
   --experimental_condition HSV-1 \
   --ground_truth /path/to/HSV-1_ground_truth_with_log2FC.csv
 ```
+
+## Outputs
+
+*   **`3utr_ext2500bp_gap1000bp_counts.txt`**: Raw counts matrix for extended regions.
+*   **`differential_analysis_results.csv`**: Full DESeq2 results table.
+*   **`significant_extended_genes.csv`**: List of high-confidence DoTT candidates (padj < 0.05, log2FC > 1).
+*   **`volcano_counts.tsv`**: Summary of up/down-regulated readthrough events.
+*   **`_Volcano_plot.png`**: Visualization of differential readthrough
