@@ -27,3 +27,5 @@ r-tidyverse
 r-ggbeeswarm
 r-stringr
 r-ggrastr
+r-msigdbr
+bioconductor-fgsea
