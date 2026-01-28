@@ -80,12 +80,13 @@ def main():
     
     # Optional GSEA
     if args.run_gsea:
-        subprocess.run([
-            "Rscript", "dott_gsea_preranked_list.R",
-            "--input_file", absolute_sig_file,
-            "--output_dir", args.output_dir
-        ], check=True)
-        print("GSEA pre-ranked list created.")
+      subprocess.run([
+          "Rscript", "dott_gsea_preranked.R",
+          "--deseq2_results", deseq2_results_file,
+          "--output_dir", args.output_dir,
+          "--species", args.species
+      ], check=True)
+      print("GSEA completed (RNK + fgsea + plots).")
     
     # Optional UNSUPERVISED ML
     if args.unsupervised_ml:
