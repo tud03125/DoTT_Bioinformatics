@@ -44,7 +44,7 @@ Runs a DESeq2 analysis using rpy2, producing differential expression results.
   - **Multiple Output Files:**
   Produces separate files for significant genes (directional, i.e., log2FC > 1) and absolute significant genes (using |log2FC| > 1, including individual mean values).
 
-- **GSEA Pre-ranked List Generation:**
+- **GSEA Pre-ranked Analysis:**
 Optionally generates a GSEA pre-ranked list from the DESeq2 results and uses that to run GSEA Pre-Ranked analysis to create 1) FDR-significant bubble plot and 2) list of ES plots from that pre-ranked list.
 
 - **Machine Learning Modules:**
