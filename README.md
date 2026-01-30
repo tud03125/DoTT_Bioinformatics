@@ -162,7 +162,7 @@ Enable dynamic region extension (if not provided, a fixed extension is used).
 Path to the kgXref mapping file (used for human GTFs).
 
 **--run_gsea**
-Enable generation of a GSEA pre-ranked list from the DESeq2 results.
+Enable generation of a GSEA pre-ranked list from the DESeq2 results and uses that to run GSEA Pre-Ranked analysis.
 
 **--bootstrap, --n_boot, --consensus_threshold**
 Enable bootstrapping in the DESeq2 analysis.
