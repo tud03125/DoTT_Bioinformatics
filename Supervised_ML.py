@@ -16,6 +16,22 @@ from sklearn.model_selection import (
 )
 from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline
+from scipy.stats import t
+
+def mean_ci(x, alpha=0.05):
+    """
+    Returns mean, (lower, upper) 95% CI using a t-interval, and SD.
+    Intended for summarizing variability across CV folds.
+    """
+    x = np.asarray(x, dtype=float)
+    x = x[~np.isnan(x)]
+    n = len(x)
+    m = x.mean()
+    if n <= 1:
+        return m, (m, m), 0.0
+    s = x.std(ddof=1)
+    h = t.ppf(1 - alpha/2, df=n-1) * s / np.sqrt(n)
+    return m, (m - h, m + h), s
 
 def load_tx2gene_mapping(gtf_file):
     """
@@ -186,10 +202,16 @@ def compare_to_ground_truth(ground_truth_file, deseq_results_file, mapping_gtf_f
         accs.append((tp+tn)/(tp+tn+fp+fn))
         sens.append(tp/(tp+fn) if tp+fn else np.nan)
         specs.append(tn/(tn+fp) if tn+fp else np.nan)
-
+    
+    # Summarize fold-to-fold variability for ROC_AUC
+    mean_auc, (ci_lo, ci_hi), sd_auc = mean_ci(aucs)
+    
     # Save CV metrics
     cv_metrics = {
         'Mean_ROC_AUC': np.mean(aucs),
+        'SD_ROC_AUC': sd_auc,
+        'CI95_ROC_AUC_L': ci_lo,
+        'CI95_ROC_AUC_U': ci_hi,
         'Mean_Average_Precision': np.mean(aps),
         'Mean_Accuracy': np.mean(accs),
         'Mean_Sensitivity': np.mean(sens),
@@ -273,6 +295,8 @@ def train_ml_classifier_cv(ground_truth_file, deseq2_results_file, mapping_gtf_f
     cv_scores = cross_val_score(pipeline, features, labels, cv=skf, scoring='roc_auc')
     print("ML Cross-validation ROC AUC scores:", cv_scores)
     print("Mean ML Cross-validation ROC AUC: {:.3f}".format(cv_scores.mean()))
+    mean_auc, (ci_lo, ci_hi), sd_auc = mean_ci(cv_scores)
+    print(f"ML CV ROC AUC: {mean_auc:.3f} (SD {sd_auc:.3f}; 95% CI {ci_lo:.3f}-{ci_hi:.3f})")
     
     # Get cross-validation predictions for additional evaluation
     cv_pred_prob = cross_val_predict(pipeline, features, labels, cv=skf, method='predict_proba')[:, 1]
